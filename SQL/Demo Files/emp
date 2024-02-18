@@ -1,0 +1,20 @@
+-- create the table
+CREATE TABLE emp ( ID int, NAME varchar(10) )
+
+-- insert values in the table
+INSERT INTO emp (ID, NAME)
+VALUES (1,'Emp1'), (2,'Emp2'), (3,'Emp3'), (4,'Emp4'),
+(5,'Emp5'), (6,'Emp6'), (7,'Emp7'), (8,'Emp8'),
+(9,'Emp9'), (10,'Emp10'), (11,'Emp11'), (12,'Emp12');
+
+-- GET THE OUTPUT SAME AS THE IMAGE
+WITH cte AS (
+	SELECT *, CONCAT(id, ' ', name) AS con, 
+	NTILE(4) OVER(ORDER BY id ASC) AS groups		--NTILE(4) this function groups rows as 1 2 3
+	FROM emp
+)
+-- SELECT * FROM cte
+SELECT STRING_AGG(con, ', ') AS result, groups
+FROM cte
+GROUP BY groups
+ORDER BY groups

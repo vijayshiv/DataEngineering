@@ -1,0 +1,179 @@
+SELECT * FROM olympic
+
+--1. Query to get a general overview of the dataset.
+SELECT COUNT(*) AS total_entries,
+       COUNT(DISTINCT team) AS total_teams,
+       COUNT(DISTINCT sport) AS total_sports,
+       MIN(year) AS min_year,
+       MAX(year) AS max_year
+FROM olympic;
+
+-- 2. Query to find the top countries with the most medals.
+SELECT noc, COUNT(*) AS total_medals
+FROM olympic
+WHERE medal IS NOT NULL
+GROUP BY noc
+ORDER BY total_medals DESC
+LIMIT 10;
+
+-- 3. Query to calculate average age, height, and weight of athletes.
+SELECT sex,
+       ROUND(AVG(age)) AS avg_age,
+       ROUND(AVG(height), 2) AS avg_height,
+       ROUND(AVG(weight)) AS avg_weight
+FROM olympic
+WHERE height IS NOT NULL OR weight IS NOT NULL
+GROUP BY sex;
+
+-- 4. Query to show the number of athletes participating in each sport.
+SELECT sport, COUNT(DISTINCT id) AS num_athletes
+FROM olympic
+GROUP BY sport
+ORDER BY num_athletes DESC;
+
+-- 5. Query to analyze the distribution of medals by gender.
+SELECT sex, medal, COUNT(*) AS num_medals
+FROM olympic
+WHERE medal IS NOT NULL
+GROUP BY sex, medal
+ORDER BY sex, num_medals DESC;
+
+-- 6. Query to calculate the average age of medalists.
+SELECT medal, ROUND(AVG(age)) AS avg_age
+FROM olympic
+WHERE medal IS NOT NULL AND age IS NOT NULL
+GROUP BY medal;
+
+-- 7. Query to analyze the number of medals awarded each year.
+SELECT year, COUNT(medal) AS medalcounteachyear
+FROM olympic
+WHERE medal IS NOT NULL AND year IS NOT NULL
+GROUP BY year
+ORDER BY year DESC;
+
+-- 8. Query to identify the most popular events based on the number of participants
+SELECT event, COUNT(DISTINCT id) AS num_participants
+FROM olympic
+GROUP BY event
+ORDER BY num_participants DESC
+LIMIT 10; 
+
+-- 9. Query to analyze the number of athletes and medals in each host city.
+SELECT city, COUNT(DISTINCT(id)) AS athletecount, COUNT(medal) AS medalscount
+FROM olympic
+WHERE medal IS NOT NULL
+GROUP BY city
+ORDER BY athletecount DESC, medalscount ASC;
+
+-- 10. Query to analyze the distribution of medals by season (Summer/Winter).
+SELECT season, medal, COUNT(medal) AS medalcount
+FROM olympic
+WHERE medal IS NOT NULL
+GROUP BY medal, season
+ORDER BY season DESC
+
+-- 11. Query to find the distribution of medals by country and sport.
+SELECT noc, sport, COUNT(medal) AS medalcount
+FROM olympic
+WHERE medal IS NOT NULL
+GROUP BY noc, sport
+ORDER BY medalcount DESC
+LIMIT 10;
+
+-- 12. Query to analyze the age distribution of medalists in different sports.
+SELECT sport, age,
+       COUNT(medal) AS medalcount
+FROM olympic
+WHERE medal IS NOT NULL AND age IS NOT NULL
+GROUP BY sport, age
+ORDER BY sport, age;
+
+-- 13. Query to find athletes who participated in multiple Olympic games
+SELECT name, COUNT(DISTINCT games) AS num_olympics_participated
+FROM olympic
+GROUP BY name
+HAVING COUNT(DISTINCT games) > 1
+ORDER BY num_olympics_participated DESC
+LIMIT 10;
+
+-- 14. Query to analyze the distribution of medals by event and gender.
+SELECT event, sex, medal, COUNT(*) AS num_medals
+FROM olympic
+WHERE medal IS NOT NULL
+GROUP BY event, sex, medal
+ORDER BY event, sex, num_medals DESC;
+
+-- 15. Query to find the most dominant countries in each sport based on gold medals.
+SELECT sport, noc, COUNT(*) AS gold_medals
+FROM olympic
+WHERE medal = 'Gold'
+GROUP BY sport, noc
+HAVING COUNT(*) >= 5
+ORDER BY sport, gold_medals DESC;
+
+-- 16. Query to show the medal history for each athlete, including gold, silver, and bronze medals.
+SELECT o.name, o.noc,
+       SUM(CASE WHEN o.medal = 'Gold' THEN 1 ELSE 0 END) AS gold_medals,
+       SUM(CASE WHEN o.medal = 'Silver' THEN 1 ELSE 0 END) AS silver_medals,
+       SUM(CASE WHEN o.medal = 'Bronze' THEN 1 ELSE 0 END) AS bronze_medals
+FROM olympic o
+GROUP BY o.name, o.noc
+ORDER BY gold_medals DESC, silver_medals DESC, bronze_medals DESC
+LIMIT 10;
+
+-- 17. Query to compare the medal performance of two specific countries across different sports.	
+SELECT o.sport,
+       SUM(CASE WHEN o.noc = 'NOC1' THEN 1 ELSE 0 END) AS medals_noc1,
+       SUM(CASE WHEN o.noc = 'NOC2' THEN 1 ELSE 0 END) AS medals_noc2
+FROM olympic o
+WHERE o.medal IS NOT NULL
+GROUP BY o.sport
+HAVING SUM(CASE WHEN o.noc = 'NOC1' THEN 1 ELSE 0 END) > 0
+    OR SUM(CASE WHEN o.noc = 'NOC2' THEN 1 ELSE 0 END) > 0
+ORDER BY o.sport;
+
+-- 18. Query to analyze the distribution of medals across different age groups.
+WITH age_groups AS (
+    SELECT id, medal, CASE
+                WHEN age < 20 THEN 'Under 20'
+                WHEN age >= 20 AND age < 30 THEN '20-29'
+                WHEN age >= 30 AND age < 40 THEN '30-39'
+                ELSE '40 and above'
+            END AS age_group
+    FROM olympic
+    WHERE medal IS NOT NULL
+)
+SELECT age_group, medal, COUNT(*) AS num_medals
+FROM age_groups
+GROUP BY age_group, medal
+ORDER BY age_group, num_medals DESC;
+
+-- 19. Query to identify athletes who won medals in consecutive Olympic games.
+WITH medal_history AS (
+    SELECT id, games, medal, name,
+           LAG(medal) OVER(PARTITION BY id ORDER BY games) AS prev_medal
+    FROM olympic
+    WHERE medal IS NOT NULL
+)
+SELECT DISTINCT m1.id, m1.name,
+       m1.games AS current_game, m1.medal AS current_medal,
+       m2.games AS previous_game, m2.medal AS previous_medal
+FROM medal_history m1
+JOIN medal_history m2 ON m1.id = m2.id AND m1.games = m2.games
+WHERE m1.medal = 'Gold' AND m2.medal = 'Gold';
+
+-- 20. Query to calculate the success rate of athletes based on the number of gold medals won.
+SELECT name, COUNT(DISTINCT games) AS num_olympics_participated,
+       COUNT(DISTINCT CASE WHEN medal = 'Gold' THEN games END) AS num_gold_medals,
+       COUNT(DISTINCT CASE WHEN medal IS NOT NULL THEN games END) AS num_medals,
+       ROUND((COUNT(DISTINCT CASE WHEN medal = 'Gold' THEN games END) * 100.0) /
+       NULLIF(COUNT(DISTINCT CASE WHEN medal IS NOT NULL THEN games END), 0), 2) AS success_rate
+FROM olympic
+GROUP BY name
+HAVING COUNT(DISTINCT CASE WHEN medal IS NOT NULL THEN games END) > 0
+ORDER BY success_rate DESC
+LIMIT 10;
+
+
+
+

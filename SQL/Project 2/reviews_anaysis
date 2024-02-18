@@ -1,0 +1,41 @@
+SELECT * FROM reviews
+
+--Removing all the NULL values from the overall_rating column
+DELETE FROM reviews 
+WHERE overall_rating IS NULL;
+
+-- Name of the cafe which have rating more than 4
+SELECT name, overall_rating FROM reviews
+WHERE overall_rating >= 4
+
+--Query to get an overview of the data and its size.
+SELECT COUNT(*) AS total_entries,
+       COUNT(DISTINCT city) AS total_cities,
+       COUNT(DISTINCT cuisine) AS total_cuisines
+FROM reviews;
+
+-- Query to find the top-rated restaurants along with their details.
+SELECT name, overall_rating, cuisine, city
+FROM reviews
+ORDER BY overall_rating DESC
+LIMIT 10;
+
+-- Query to calculate the average rating for each cuisine.
+SELECT cuisine, AVG(overall_rating) AS avg_rating
+FROM reviews
+GROUP BY cuisine
+ORDER BY avg_rating DESC;
+
+-- Query to find the highest rated cuisine in each city.
+SELECT name, city, cuisine, MAX(overall_rating) AS max_rating
+FROM reviews
+GROUP BY city, cuisine, name
+ORDER BY city ASC ,max_rating DESC;
+
+-- Query to identify the most popular cuisines based on the number of restaurants serving them.
+SELECT cuisine, COUNT(cuisine) AS num_restaurants
+FROM reviews
+GROUP BY cuisine
+ORDER BY num_restaurants DESC
+LIMIT 5;
+

@@ -1,0 +1,17 @@
+-- create table
+CREATE TABLE match ( team varchar(20) )
+
+-- insert values into it
+INSERT INTO match (team) VALUES ('India'), ('Pak'), ('Aus'), ('Eng')
+
+-- List all the matches between teams, if matches are played once
+WITH cte AS (
+	SELECT *, ROW_NUMBER() OVER(ORDER BY team) AS id
+	FROM match
+)
+
+SELECT a.team AS"TEAM-A", b.team AS "TEAM-B" FROM cte a
+JOIN cte b 
+ON a.team <> b.team
+WHERE a.team < b.team
+
