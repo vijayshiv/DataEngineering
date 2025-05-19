@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import csv
 
 
 def get_data():
@@ -21,6 +22,7 @@ def main():
 
   with open('data.csv', 'w') as f:
     writer = csv.writer(f)
+    # Write the header
     writer.writerows(data)
 
 
